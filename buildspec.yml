@@ -1,0 +1,28 @@
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - echo Logging / auth in to Amazon ECR
+      - aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/r2y0n6w5
+
+  build:
+    commands:
+      - echo Build started
+      - echo Building the docker image
+      - docker build -t taf-user-repo .
+      - docker tag taf-user-repo:latest public.ecr.aws/r2y0n6w5/taf-user-repo:latest
+
+
+  post_build:
+    commands:
+      - echo build completed
+      - echo pushing in to docker ECR...
+      - docker push public.ecr.aws/r2y0n6w5/taf-user-repo:latest
+      - echo Writing image definition file..
+      - printf '[{"name":"%s","imageUri":"%s"}]' "UserProductionCluster" "public.ecr.aws/r2y0n6w5/taf-user-repo" > imagedefinitions.json
+
+
+artifacts:
+  files:
+    - imagedefinitions.json
